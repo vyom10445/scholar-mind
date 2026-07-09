@@ -16,7 +16,7 @@ vectorstore = Chroma(
 #create retrieval
 retriever = vectorstore.as_retriever(
     search_type = 'mmr',
-    search_kwards = {
+    search_kwargs = {
         "k" : 4 ,
         "fetch_k" : 10,
         "lambda_mult" : 0.5
