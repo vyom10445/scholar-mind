@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScholarMind</title>
+<link rel="stylesheet" href="/static/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+          <path d="M4 4c4 0 8 1.5 8 5v11c0-3.5-4-5-8-5V4z" fill="url(#g1)"/>
+          <path d="M20 4c-4 0-8 1.5-8 5v11c0-3.5 4-5 8-5V4z" fill="url(#g2)"/>
+          <defs>
+            <linearGradient id="g1" x1="4" y1="4" x2="12" y2="20"><stop stop-color="#8B7FFF"/><stop offset="1" stop-color="#45D9C0"/></linearGradient>
+            <linearGradient id="g2" x1="20" y1="4" x2="12" y2="20"><stop stop-color="#45D9C0"/><stop offset="1" stop-color="#8B7FFF"/></linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">ScholarMind</span>
+        <span class="brand-tag">grounded in your notes only</span>
+      </div>
+    </div>
+
+    <div class="upload-zone" id="dropzone">
+      <input type="file" id="fileInput" multiple accept="application/pdf" hidden>
+      <svg class="upload-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6">
+        <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <p>Drop PDFs here or <span class="link">browse</span></p>
+      <span class="upload-hint">textbooks · lecture notes · papers</span>
+    </div>
+    <div id="uploadProgress" class="upload-progress hidden">
+      <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+      <span id="progressLabel">Indexing…</span>
+    </div>
+
+    <div class="library-section">
+      <div class="section-label">Library <span id="chunkCount" class="pill">0 chunks</span></div>
+      <div id="libraryList" class="library-list">
+        <p class="library-empty">No documents yet.</p>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <button id="settingsBtn" class="ghost-btn" type="button">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1 1.56V21a2 2 0 11-4 0v-.09a1.7 1.7 0 00-1-1.56 1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.7 1.7 0 00.34-1.87 1.7 1.7 0 00-1.56-1H3a2 2 0 110-4h.09a1.7 1.7 0 001.56-1 1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06a1.7 1.7 0 001.87.34H9a1.7 1.7 0 001-1.56V3a2 2 0 114 0v.09a1.7 1.7 0 001 1.56 1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06a1.7 1.7 0 00-.34 1.87V9a1.7 1.7 0 001.56 1H21a2 2 0 110 4h-.09a1.7 1.7 0 00-1.56 1z"/></svg>
+        Settings
+      </button>
+      <button id="resetBtn" class="ghost-btn danger" type="button">Reset library</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div id="emptyState" class="empty-state">
+      <div class="orb"></div>
+      <h1>Ask your notes anything.</h1>
+      <p>Upload lecture slides, textbooks, or papers on the left. ScholarMind answers strictly from what you give it . nothing invented.</p>
+    </div>
+
+    <div id="chatLog" class="chat-log"></div>
+
+    <form id="chatForm" class="composer">
+      <textarea id="chatInput" placeholder="Ask a question about your documents…" rows="1"></textarea>
+      <button type="submit" id="sendBtn" class="send-btn" aria-label="Send">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </form>
+  </main>
+
+</div>
+
+<div id="settingsPanel" class="settings-panel hidden">
+  <div class="settings-card">
+    <div class="settings-header">
+      <span>Retrieval &amp; model</span>
+      <button id="closeSettings" class="icon-x" type="button">×</button>
+    </div>
+    <label>Model
+      <input type="text" id="modelInput" value="gpt-5.4-nano-2026-03-17">
+    </label>
+    <label>Results to retrieve (k) <output id="kVal">4</output>
+      <input type="range" id="kInput" min="2" max="10" value="4">
+    </label>
+    <label>Candidates before re-ranking (fetch_k) <output id="fetchKVal">10</output>
+      <input type="range" id="fetchKInput" min="4" max="20" value="10">
+    </label>
+    <label>Diversity (lambda_mult) <output id="lambdaVal">0.5</output>
+      <input type="range" id="lambdaInput" min="0" max="1" step="0.05" value="0.5">
+    </label>
+  </div>
+</div>
+
+<script src="/static/script.js"></script>
+</body>
+</html>

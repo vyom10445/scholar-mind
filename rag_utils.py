@@ -120,3 +120,89 @@ def answer_question(query: str, retriever, llm):
     final_prompt = PROMPT.invoke({"context": context, "question": query})
     response = llm.invoke(final_prompt)
     return response.content, docs
+
+
+def retrieve_docs(query: str, retriever):
+    return retriever.invoke(query)
+
+
+def stream_answer(query: str, docs, llm):
+    """Yield answer text chunks as they're generated (for the web UI's streaming chat)."""
+    context = "\n\n".join(doc.page_content for doc in docs)
+    final_prompt = PROMPT.invoke({"context": context, "question": query})
+    for chunk in llm.stream(final_prompt):
+        if chunk.content:
+            yield chunk.content
+
+
+def docs_to_payload(docs):
+    """Serialize retrieved documents into plain dicts for JSON responses."""
+    payload = []
+    for doc in docs:
+        payload.append(
+            {
+                "file": os.path.basename(doc.metadata.get("source", "document")),
+                "page": doc.metadata.get("page", "?"),
+                "snippet": doc.page_content[:220].replace("\n", " ").strip(),
+            }
+        )
+    return payload
+
+
+def list_library(persist_directory: str = CHROMA_DIR):
+    """Return per-file chunk counts currently indexed, for the sidebar library list."""
+    if not database_exists(persist_directory):
+        return []
+    vectorstore = get_vectorstore(persist_directory)
+    try:
+        data = vectorstore._collection.get(include=["metadatas"])
+    except Exception:
+        return []
+    counts = {}
+    for meta in data.get("metadatas", []):
+        name = os.path.basename(meta.get("source", "unknown"))
+        counts[name] = counts.get(name, 0) + 1
+    return [{"name": name, "chunks": n} for name, n in sorted(counts.items())]
+
+
+# ------------------------------------------------------------------------
+# Session-scoped (in-memory) vector stores — used by the web app so that
+# each visitor gets their own private library. Nothing here ever touches
+# disk: no persist_directory is passed to Chroma, so the collection lives
+# only in server RAM for as long as the process/session is alive.
+# ------------------------------------------------------------------------
+
+
+def new_ephemeral_vectorstore(collection_name: str):
+    """A vector store scoped to one session — lives only in memory, never persisted."""
+    embeddings = get_embeddings()
+    return Chroma(collection_name=collection_name, embedding_function=embeddings)
+
+
+def add_documents_to_vectorstore(chunks, vectorstore):
+    vectorstore.add_documents(chunks)
+    return vectorstore
+
+
+def vectorstore_chunk_count(vectorstore) -> int:
+    if vectorstore is None:
+        return 0
+    try:
+        return vectorstore._collection.count()
+    except Exception:
+        return 0
+
+
+def list_vectorstore_contents(vectorstore):
+    """Same as list_library(), but for an in-memory session vectorstore instead of a path."""
+    if vectorstore is None:
+        return []
+    try:
+        data = vectorstore._collection.get(include=["metadatas"])
+    except Exception:
+        return []
+    counts = {}
+    for meta in data.get("metadatas", []):
+        name = os.path.basename(meta.get("source", "unknown"))
+        counts[name] = counts.get(name, 0) + 1
+    return [{"name": name, "chunks": n} for name, n in sorted(counts.items())]
