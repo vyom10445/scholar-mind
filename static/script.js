@@ -116,10 +116,9 @@ chatInput.addEventListener('keydown', e => {
 function addMessage(role, html) {
   const msg = document.createElement('div');
   msg.className = `msg ${role}`;
-  msg.innerHTML = `
-    <div class="avatar ${role}">${role === 'user' ? '🧑‍🎓' : '<img src="/static/assets/logo.png" alt="">'}</div>
-    <div class="bubble">${html}</div>
-  `;
+  msg.innerHTML = role === 'user'
+    ? `<div class="bubble">${html}</div>`
+    : `<div class="avatar assistant"></div><div class="bubble">${html}</div>`;
   chatLog.appendChild(msg);
   chatLog.scrollTop = chatLog.scrollHeight;
   return msg.querySelector('.bubble');
